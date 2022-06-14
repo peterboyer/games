@@ -1,22 +1,14 @@
 # Othello
 
-You will be implementing a game that runs in the terminal. The core structure
-of the game will be provided and your task will be to implement the core logic
-of the program.
+A loose implementation of Othello made on stream at https://www.twitch.tv/peterboyer_!
 
-- 8x8 Play Area
-- 30 B pieces, 30 W pieces
-- B W+ B (black surround any number of white pieces, replace all W with B)
-- Diagonals also capture.
+Clone the repo, install deps with `yarn install` or `npm install`, the run with `yarn cli` or `npm run cli`.
 
-W _ _
-_ B _
-_ _ W     black captured
+Supports 2 players default.
 
-W _ _ _
-_ B _ _
-_ _ _ W   no capture
+![players-2](./players-2.png)
 
-Search capture pairs:
+Or you can provide N players (this is 12 here!)
 
-W1 (0,0) -> W2 (0,4) - is in a line, search inbetween spaces for contiguous Bs
+![players-12](./players-12.png)
+
