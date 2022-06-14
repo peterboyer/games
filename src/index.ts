@@ -16,12 +16,22 @@ interface Turn {
 export interface Othello {
   getCell(coord: Coord): Result<Cell|undefined, "CoordOutOfRange">;
   getCurrentPlayer(): Result<Player, "GameFinished">;
-  next(coord: Coord):
-      Result<void, "CellGetError"|"CellOccupied"|"PlayerError"|"CellSetError">;
+  getNextValidCoords(): Result<Coord[], "GameFinished"|"PlayerGetError">;
+  next(coord: Coord): Result<void, "CellGetError"|"CellOccupied"|
+                             "PlayerGetError"|"CellSetError">;
 }
 
 export type Grid = Map<string, Cell>;
 export type Coord = [ x: number, y: number ];
+
+function parseCoord(source: string): Result<Coord, "SourceInvalid"> {
+  const [xString, yString] = source.split(",");
+  if (!(xString && yString)) {
+    return Result.error("SourceInvalid");
+  }
+  const [x, y] = [ parseInt(xString), parseInt(yString) ];
+  return Result([ x, y ])
+}
 
 export function Othello(
     options: {grid?: {width: number, height: number}, players?: string[]} = {}):
@@ -84,8 +94,8 @@ export function Othello(
 
     setCell([ 4, 4 ], white)
     setCell([ 5, 4 ], black)
-    setCell([ 4, 5 ], white)
-    setCell([ 5, 5 ], black)
+    setCell([ 5, 5 ], white)
+    setCell([ 4, 5 ], black)
   }
 
   const turns: Turn[] = [];
@@ -116,6 +126,54 @@ export function Othello(
         return Result(nextPlayer);
       }
 
+  const getNextValidCoords: Othello["getNextValidCoords"] =
+      () => {
+        const $currentPlayer = getCurrentPlayer();
+        if ($currentPlayer.error) {
+          return Result.error("PlayerGetError", {cause : $currentPlayer});
+        }
+        const [currentPlayer] = $currentPlayer;
+        const validcoords = new Set<string>();
+        const walk =
+            (coord: Coord, direction: Coord, seen: boolean = false): void => {
+              const nextcoord: Coord =
+                  [ coord[0] + direction[0], coord[1] + direction[1] ];
+              const $nextcell = getCell(nextcoord);
+              if ($nextcell.error) {
+                return;
+              }
+              const [nextcell] = $nextcell;
+              if (!nextcell) {
+                if (seen) {
+
+                  validcoords.add(nextcoord.join(","));
+                }
+                return;
+              }
+              const {player} = nextcell;
+              if (player.id === currentPlayer.id) {
+                return;
+              }
+              walk(nextcoord, direction, true);
+            };
+        for (const [coordString, cell] of grid.entries()) {
+          if (cell.player !== currentPlayer) {
+            continue;
+          }
+          const [x, y] = parseCoord(coordString).orThrow();
+          for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+              if (dx === 0 && dy === 0) {
+                continue;
+              }
+              walk([ x, y ], [ dx, dy ]);
+            }
+          }
+        }
+        return Result(Array.from(validcoords.values())
+                          .map(coord => parseCoord(coord).orThrow()));
+      }
+
   const next: Othello["next"] =
       (coord) => {
         const $cell = getCell(coord);
@@ -128,7 +186,7 @@ export function Othello(
         }
         const $player = getCurrentPlayer();
         if ($player.error) {
-          return Result.error("PlayerError", {cause : $player})
+          return Result.error("PlayerGetError", {cause : $player})
         }
         const [player] = $player;
         {
@@ -145,6 +203,6 @@ export function Othello(
       }
 
   return {
-    getCell, getCurrentPlayer, next
+    getCell, getCurrentPlayer, getNextValidCoords, next
   }
 }
