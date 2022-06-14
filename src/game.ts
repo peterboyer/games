@@ -209,19 +209,7 @@ export function Game(
         return;
       }
       const [nextcell] = $nextcell;
-      // console.log(
-      // coord,
-      // "+",
-      // direction,
-      // "=",
-      // nextcoord,
-      // seen,
-      // nextcell?.player.id
-      // );
       if (!nextcell) {
-        if (seen) {
-          throw new TypeError("UnexpectedEmptyCell");
-        }
         return;
       }
       const { player } = nextcell;
@@ -240,7 +228,6 @@ export function Game(
         walk([x, y], [dx, dy]);
       }
     }
-    // console.log(captureCoords);
     for (const captureCoord of captureCoords) {
       setCell(captureCoord, currentPlayer).orThrow();
     }

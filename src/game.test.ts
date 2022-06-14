@@ -55,3 +55,10 @@ it("should convert tokens when sandwiched", () => {
   expect(game.getCell([4, 4]).orThrow()?.player.id).toBe("B");
   expect(game.getCell([5, 4]).orThrow()?.player.id).toBe("B");
 });
+
+it.only("should continue past a couple of turns", () => {
+  const game = Game();
+
+  game.next([3, 4]);
+  game.next([3, 3]);
+});
