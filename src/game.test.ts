@@ -1,25 +1,25 @@
-import { Othello } from "./index";
+import { Game } from "./game";
 
 it("should have a correct default state", () => {
-  const othello = Othello();
+  const game = Game();
 
-  expect(othello.getCell([4, 4]).orUndefined()?.player.id).toBe("W");
-  expect(othello.getCell([5, 4]).orUndefined()?.player.id).toBe("B");
-  expect(othello.getCell([5, 5]).orUndefined()?.player.id).toBe("W");
-  expect(othello.getCell([4, 5]).orUndefined()?.player.id).toBe("B");
+  expect(game.getCell([4, 4]).orUndefined()?.player.id).toBe("W");
+  expect(game.getCell([5, 4]).orUndefined()?.player.id).toBe("B");
+  expect(game.getCell([5, 5]).orUndefined()?.player.id).toBe("W");
+  expect(game.getCell([4, 5]).orUndefined()?.player.id).toBe("B");
 });
 
 it("should tell us whose turn it is", () => {
-  const othello = Othello();
+  const game = Game();
 
-  expect(othello.getCurrentPlayer().orUndefined()?.id).toBe("B");
+  expect(game.getCurrentPlayer().orUndefined()?.id).toBe("B");
 });
 
 it("should get complete list of next valid coords", () => {
-  const othello = Othello();
+  const game = Game();
 
   const coords = new Set(
-    othello
+    game
       .getNextValidCoords()
       .orThrow()
       .map((coord) => coord.join(","))
@@ -32,26 +32,26 @@ it("should get complete list of next valid coords", () => {
 });
 
 it("should prevent placing pieces on an invalid cell", () => {
-  const othello = Othello();
+  const game = Game();
 
-  expect(othello.next([4, 4])).toMatchObject({
+  expect(game.next([4, 4])).toMatchObject({
     error: { type: "NotValidCoord" },
   });
 });
 
 it("should correctly advance the current player after a turn", () => {
-  const othello = Othello();
+  const game = Game();
 
-  expect(othello.next([3, 4])).toMatchObject({ error: undefined });
-  expect(othello.getCell([3, 4]).orUndefined()?.player.id).toBe("B");
-  expect(othello.getCurrentPlayer().orUndefined()?.id).toBe("W");
+  expect(game.next([3, 4])).toMatchObject({ error: undefined });
+  expect(game.getCell([3, 4]).orUndefined()?.player.id).toBe("B");
+  expect(game.getCurrentPlayer().orUndefined()?.id).toBe("W");
 });
 
 it("should convert tokens when sandwiched", () => {
-  const othello = Othello();
+  const game = Game();
 
-  othello.next([3, 4]).orThrow();
-  expect(othello.getCell([3, 4]).orThrow()?.player.id).toBe("B");
-  expect(othello.getCell([4, 4]).orThrow()?.player.id).toBe("B");
-  expect(othello.getCell([5, 4]).orThrow()?.player.id).toBe("B");
+  game.next([3, 4]).orThrow();
+  expect(game.getCell([3, 4]).orThrow()?.player.id).toBe("B");
+  expect(game.getCell([4, 4]).orThrow()?.player.id).toBe("B");
+  expect(game.getCell([5, 4]).orThrow()?.player.id).toBe("B");
 });

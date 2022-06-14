@@ -13,7 +13,7 @@ interface Turn {
   coord: Coord;
 }
 
-export interface Othello {
+export interface Game {
   getCell(coord: Coord): Result<Cell | undefined, "CoordOutOfRange">;
   getCurrentPlayer(): Result<Player, "GameFinished">;
   getNextValidCoords(): Result<Coord[], "GameFinished" | "PlayerGetError">;
@@ -37,9 +37,9 @@ function parseCoord(source: string): Result<Coord, "SourceInvalid"> {
   return Result([x, y]);
 }
 
-export function Othello(
+export function Game(
   options: { grid?: { width: number; height: number }; players?: string[] } = {}
-): Othello {
+): Game {
   const grid: Grid = new Map();
   const gridWidth = options.grid?.width ?? 8;
   const gridHeight = options.grid?.height ?? 8;
@@ -79,7 +79,7 @@ export function Othello(
     return Result(undefined);
   };
 
-  const getCell: Othello["getCell"] = (coord) => {
+  const getCell: Game["getCell"] = (coord) => {
     const [x, y] = coord;
     if (!(x >= 1 && x <= 8 && y >= 1 && y <= 8)) {
       return Result.error("CoordOutOfRange");
@@ -103,7 +103,7 @@ export function Othello(
 
   const turns: Turn[] = [];
 
-  const getCurrentPlayer: Othello["getCurrentPlayer"] = () => {
+  const getCurrentPlayer: Game["getCurrentPlayer"] = () => {
     const _players = Array.from(players.values());
     const lastTurn = turns.length ? turns[turns.length - 1] : undefined;
     const firstPlayer = _players[0];
@@ -130,7 +130,7 @@ export function Othello(
   };
 
   let validcoords = new Set<string>();
-  const getNextValidCoords: Othello["getNextValidCoords"] = () => {
+  const getNextValidCoords: Game["getNextValidCoords"] = () => {
     const $currentPlayer = getCurrentPlayer();
     if ($currentPlayer.error) {
       return Result.error("PlayerGetError", { cause: $currentPlayer });
@@ -187,7 +187,7 @@ export function Othello(
   // TODO: make this pure
   getNextValidCoords();
 
-  const next: Othello["next"] = (coord) => {
+  const next: Game["next"] = (coord) => {
     const coordString = coord.join(",");
     if (!validcoords.has(coordString)) {
       return Result.error("NotValidCoord");
