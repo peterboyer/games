@@ -15,6 +15,8 @@ interface Turn {
 }
 
 export interface Game {
+  width: number;
+  height: number;
   getCell(coord: Coord): Result<Cell | undefined, "CoordOutOfRange">;
   getCurrentPlayer(): Result<Player, "GameFinished">;
   getNextValidCoords(): Result<Coord[], "GameFinished" | "PlayerGetError">;
@@ -31,12 +33,8 @@ export type Grid = Map<string, Cell>;
 export function Game(
   options: { grid?: { width: number; height: number }; players?: string[] } = {}
 ): Game {
-  const grid: Grid = new Map();
-  const gridWidth = options.grid?.width ?? 8;
-  const gridHeight = options.grid?.height ?? 8;
-
   const players = new Map<string, Player>();
-  const playerIds = options.players ?? ["B", "W"];
+  const playerIds = options.players ?? ["W", "B"];
   if (!(playerIds.length >= 2)) {
     // TODO: use esresult instead
     throw new TypeError("NotEnoughPlayers");
@@ -44,6 +42,11 @@ export function Game(
   for (const playerId of playerIds) {
     players.set(playerId, { id: playerId });
   }
+
+  const grid: Grid = new Map();
+  const gridNorm = 6 + players.size;
+  const gridWidth = options.grid?.width ?? gridNorm;
+  const gridHeight = options.grid?.height ?? gridNorm;
 
   const isCoordInGrid = (coord: Coord): boolean => {
     const [x, y] = coord;
@@ -71,8 +74,7 @@ export function Game(
   };
 
   const getCell: Game["getCell"] = (coord) => {
-    const [x, y] = coord;
-    if (!(x >= 1 && x <= 8 && y >= 1 && y <= 8)) {
+    if (!isCoordInGrid(coord)) {
       return Result.error("CoordOutOfRange");
     }
     const key = coord.join(",");
@@ -82,14 +84,16 @@ export function Game(
 
   // setup the board to defaults
   // TODO: calculate the board's center using the grid width and height
-  {
-    const white = getPlayer("W").orThrow();
-    const black = getPlayer("B").orThrow();
-
-    setCell([4, 4], white);
-    setCell([5, 4], black);
-    setCell([5, 5], white);
-    setCell([4, 5], black);
+  const _players = Array.from(players.values());
+  for (let y = 0; y <= _players.length - 1; y++) {
+    for (let x = 0; x <= _players.length - 1; x++) {
+      const i = (x + y) % _players.length;
+      const player = _players[i];
+      if (!player) {
+        throw new TypeError("NoPlayer");
+      }
+      setCell([4 + x, 4 + y], player);
+    }
   }
 
   const turns: Turn[] = [];
@@ -97,11 +101,11 @@ export function Game(
   const getCurrentPlayer: Game["getCurrentPlayer"] = () => {
     const _players = Array.from(players.values());
     const lastTurn = turns.length ? turns[turns.length - 1] : undefined;
-    const firstPlayer = _players[0];
-    if (!firstPlayer) {
-      throw new TypeError("FirstPlayerMustBeDefined");
+    const lastPlayer = _players[_players.length - 1];
+    if (!lastPlayer) {
+      throw new TypeError("LastPlayerMustBeDefined");
     }
-    let nextPlayer = firstPlayer;
+    let nextPlayer = lastPlayer;
     if (lastTurn) {
       const playerIndex = _players.indexOf(lastTurn.player);
       if (playerIndex === -1) {
@@ -241,6 +245,8 @@ export function Game(
   };
 
   return {
+    width: gridWidth,
+    height: gridHeight,
     getCell,
     getCurrentPlayer,
     getNextValidCoords,

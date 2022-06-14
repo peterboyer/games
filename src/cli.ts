@@ -14,8 +14,9 @@ async function question(prompt: string): Promise<string> {
 }
 
 export async function CLI(options: { print?: (line: string) => void } = {}) {
-  const grid = { width: 8, height: 8 };
-  const game = Game({ grid });
+  const game = Game({
+    // players: ["B", "W", "X", "Y", "M", "S", "A", "B", "C", "D", "E", "F", "G"],
+  });
 
   const { print = console.log } = options;
 
@@ -24,9 +25,9 @@ export async function CLI(options: { print?: (line: string) => void } = {}) {
       .getNextValidCoords()
       .orThrow()
       .map((coord) => coord.join(","));
-    for (let y = 0; y <= grid.height; y++) {
+    for (let y = 0; y <= game.height; y++) {
       let row: string[] = [];
-      for (let x = 0; x <= grid.width; x++) {
+      for (let x = 0; x <= game.width; x++) {
         if (x === 0) {
           row.push(y === 0 ? " " : y.toString());
           continue;
