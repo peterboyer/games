@@ -9,7 +9,7 @@ it("should have a correct default state", () => {
   expect(othello.getCell([4, 5]).orUndefined()?.player.id).toBe("B");
 });
 
-it("should tell us who's turn it is", () => {
+it("should tell us whose turn it is", () => {
   const othello = Othello();
 
   expect(othello.getCurrentPlayer().orUndefined()?.id).toBe("B");
@@ -35,16 +35,15 @@ it("should prevent placing pieces on an invalid cell", () => {
   const othello = Othello();
 
   expect(othello.next([4, 4])).toMatchObject({
-    error: { type: "CellOccupied" },
+    error: { type: "NotValidCoord" },
   });
 });
 
 it("should correctly advance the current player after a turn", () => {
   const othello = Othello();
 
-  expect(othello.next([1, 1])).toMatchObject({ error: undefined });
-
-  expect(othello.getCell([1, 1]).orUndefined()?.player.id).toBe("B");
+  expect(othello.next([3, 4])).toMatchObject({ error: undefined });
+  expect(othello.getCell([3, 4]).orUndefined()?.player.id).toBe("B");
   expect(othello.getCurrentPlayer().orUndefined()?.id).toBe("W");
 });
 

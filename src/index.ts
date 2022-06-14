@@ -21,7 +21,7 @@ export interface Othello {
     coord: Coord
   ): Result<
     void,
-    "CellGetError" | "CellOccupied" | "PlayerGetError" | "CellSetError"
+    "CellGetError" | "NotValidCoord" | "PlayerGetError" | "CellSetError"
   >;
 }
 
@@ -129,13 +129,14 @@ export function Othello(
     return Result(nextPlayer);
   };
 
+  let validcoords = new Set<string>();
   const getNextValidCoords: Othello["getNextValidCoords"] = () => {
     const $currentPlayer = getCurrentPlayer();
     if ($currentPlayer.error) {
       return Result.error("PlayerGetError", { cause: $currentPlayer });
     }
     const [currentPlayer] = $currentPlayer;
-    const validcoords = new Set<string>();
+    const coords = new Set<string>();
     const walk = (
       coord: Coord,
       direction: Coord,
@@ -152,7 +153,7 @@ export function Othello(
       const [nextcell] = $nextcell;
       if (!nextcell) {
         if (seen) {
-          validcoords.add(nextcoord.join(","));
+          coords.add(nextcoord.join(","));
         }
         return;
       }
@@ -176,21 +177,20 @@ export function Othello(
         }
       }
     }
+    // TODO: remove in favour of purity
+    validcoords = coords;
     return Result(
-      Array.from(validcoords.values()).map((coord) =>
-        parseCoord(coord).orThrow()
-      )
+      Array.from(coords.values()).map((coord) => parseCoord(coord).orThrow())
     );
   };
 
+  // TODO: make this pure
+  getNextValidCoords();
+
   const next: Othello["next"] = (coord) => {
-    const $cell = getCell(coord);
-    if ($cell.error) {
-      return Result.error("CellGetError", { cause: $cell });
-    }
-    const [cell] = $cell;
-    if (cell) {
-      return Result.error("CellOccupied");
+    const coordString = coord.join(",");
+    if (!validcoords.has(coordString)) {
+      return Result.error("NotValidCoord");
     }
     const $player = getCurrentPlayer();
     if ($player.error) {
@@ -207,6 +207,8 @@ export function Othello(
       player,
       coord,
     });
+    // TODO: make pure, and use result and cached for interface func
+    getNextValidCoords();
     return Result(undefined);
   };
 
