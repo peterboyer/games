@@ -192,19 +192,69 @@ export function Othello(
     if (!validcoords.has(coordString)) {
       return Result.error("NotValidCoord");
     }
-    const $player = getCurrentPlayer();
-    if ($player.error) {
-      return Result.error("PlayerGetError", { cause: $player });
+    const $currentPlayer = getCurrentPlayer();
+    if ($currentPlayer.error) {
+      return Result.error("PlayerGetError", { cause: $currentPlayer });
     }
-    const [player] = $player;
+    const [currentPlayer] = $currentPlayer;
     {
-      const $ = setCell(coord, player);
+      const $ = setCell(coord, currentPlayer);
       if ($.error) {
         return Result.error("CellSetError", { cause: $ });
       }
     }
+    const captureCoords: Coord[] = [];
+    const walk = (
+      coord: Coord,
+      direction: Coord,
+      seen: boolean = false
+    ): void => {
+      const nextcoord: Coord = [
+        coord[0] + direction[0],
+        coord[1] + direction[1],
+      ];
+      const $nextcell = getCell(nextcoord);
+      if ($nextcell.error) {
+        return;
+      }
+      const [nextcell] = $nextcell;
+      // console.log(
+      // coord,
+      // "+",
+      // direction,
+      // "=",
+      // nextcoord,
+      // seen,
+      // nextcell?.player.id
+      // );
+      if (!nextcell) {
+        if (seen) {
+          throw new TypeError("UnexpectedEmptyCell");
+        }
+        return;
+      }
+      const { player } = nextcell;
+      if (player.id === currentPlayer.id) {
+        return;
+      }
+      captureCoords.push(nextcoord);
+      walk(nextcoord, direction, true);
+    };
+    const [x, y] = coord;
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        if (dx === 0 && dy === 0) {
+          continue;
+        }
+        walk([x, y], [dx, dy]);
+      }
+    }
+    // console.log(captureCoords);
+    for (const captureCoord of captureCoords) {
+      setCell(captureCoord, currentPlayer).orThrow();
+    }
     turns.push({
-      player,
+      player: currentPlayer,
       coord,
     });
     // TODO: make pure, and use result and cached for interface func
