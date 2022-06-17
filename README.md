@@ -1,6 +1,8 @@
 # `games`
 
-A monorepo of all the little games I've worked on, mostly which streaming on Twitch (@peterboyer_)[https://www.twitch.tv/peterboyer_].
+A monorepo of CLI games made live while streaming on my Twitch channel, [@peterboyer_](https://www.twitch.tv/peterboyer_)!
 
-Othello - typescript - [`/othello.ts`](./othello.ts)
-Tic Tac Toe - rust - [`/tictactoe.rs`](./tictactoe.rs)
+| Game        | Language   | Directory                         |
+| ----------- | ---------- | --------------------------------- |
+| Othello     | typescript | [`/othello.ts`](./othello.ts)     |
+| Tic Tac Toe | rust       | [`/tictactoe.rs`](./tictactoe.rs) |
