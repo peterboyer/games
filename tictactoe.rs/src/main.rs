@@ -20,10 +20,10 @@ fn main() {
     let mut grid = HashMap::<Coord, Player>::new();
 
     loop {
-        for y in (1..=3) {
+        for y in 1..=3 {
             let mut row = String::new();
             row.push_str("|");
-            for x in (1..=3) {
+            for x in 1..=3 {
                 let coord = Coord { x, y };
                 let coord_player = grid.get(&coord);
                 match coord_player {
@@ -58,7 +58,13 @@ fn main() {
         };
 
         let coord = Coord { x, y };
-        println!("{coord:?}");
+        match grid.get(&coord) {
+            Some(_) => {
+                println!("Coordinate already occupied! Try again.");
+                continue;
+            }
+            _ => ()
+        }
 
         grid.insert(coord, player);
 
@@ -69,12 +75,3 @@ fn main() {
         }
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-// #[test]
-// fn it_works() {
-// let result = 2 + 2;
-// assert_eq!(result, 4);
-// }
-// }
