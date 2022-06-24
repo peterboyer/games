@@ -1,3 +1,4 @@
+use rand::Rng;
 use std::collections::HashMap;
 use std::io;
 use std::io::Write;
@@ -14,12 +15,47 @@ struct Coord {
     y: usize,
 }
 
-fn main() {
-    // TODO: Randomise the start player.
-    let mut player = Player::O;
-    let mut grid = HashMap::<Coord, Player>::new();
+struct Game {
+    player: Player,
+    grid: HashMap<Coord, Player>,
+}
 
-    loop {
+struct GameOptions {
+    initial_player: Option<Player>,
+}
+
+impl Default for GameOptions {
+    fn default() -> Self {
+        GameOptions {
+            initial_player: None,
+        }
+    }
+}
+
+#[derive(Debug)]
+enum GameError {
+    CoordOccupied,
+}
+
+impl Game {
+    fn new() -> Self {
+        Game::new_with(GameOptions::default())
+    }
+
+    fn new_with(options: GameOptions) -> Self {
+        Game {
+            player: options
+                .initial_player
+                .unwrap_or_else(|| match rand::thread_rng().gen() {
+                    true => Player::X,
+                    false => Player::O,
+                }),
+            grid: HashMap::new(),
+        }
+    }
+
+    fn draw(&self) {
+        let grid = &self.grid;
         for y in 1..=3 {
             let mut row = String::new();
             row.push_str("|");
@@ -27,13 +63,49 @@ fn main() {
                 let coord = Coord { x, y };
                 let coord_player = grid.get(&coord);
                 match coord_player {
-                    Some(Player::X) => {row.push_str("X|");},
-                    Some(Player::O) => {row.push_str("O|");},
-                    None => {row.push_str(" |");},
+                    Some(Player::X) => {
+                        row.push_str("X|");
+                    }
+                    Some(Player::O) => {
+                        row.push_str("O|");
+                    }
+                    None => {
+                        row.push_str(" |");
+                    }
                 }
             }
             println!("{}", row)
         }
+    }
+
+    fn next(&mut self, coord: Coord) -> Result<(), GameError> {
+        let (player, grid) = (self.player, &mut self.grid);
+
+        match grid.get(&coord) {
+            Some(_) => {
+                return Result::Err(GameError::CoordOccupied);
+            }
+            _ => (),
+        }
+
+        grid.insert(coord, player);
+
+        if player == Player::X {
+            self.player = Player::O;
+        } else {
+            self.player = Player::X;
+        }
+
+        return Result::Ok(());
+    }
+}
+
+fn main() {
+    let mut game = Game::new();
+
+    loop {
+        game.draw();
+        println!("Current Player: {:?}", game.player);
 
         let mut input = String::new();
         print!("Enter a coordinate: ");
@@ -43,13 +115,10 @@ fn main() {
             .read_line(&mut input)
             .expect("Failed to read line.");
 
-        let coordparts: Result<Vec<usize>, _> = input
-            .trim()
-            .split(',')
-            .map(|n| n.parse())
-            .collect();
+        let coordparts: Result<Vec<usize>, _> =
+            input.trim().split(',').map(|n| n.parse()).collect();
 
-        let (x,y) = match coordparts {
+        let (x, y) = match coordparts {
             Ok(v) if v.len() == 2 => (v[0], v[1]),
             _ => {
                 println!("Invalid coordinate! Try again.");
@@ -58,20 +127,16 @@ fn main() {
         };
 
         let coord = Coord { x, y };
-        match grid.get(&coord) {
-            Some(_) => {
+        match game.next(coord) {
+            Err(GameError::CoordOccupied) => {
                 println!("Coordinate already occupied! Try again.");
                 continue;
             }
-            _ => ()
-        }
-
-        grid.insert(coord, player);
-
-        if player == Player::X {
-            player = Player::O;
-        } else {
-            player = Player::X;
+            // Err(err) => {
+            // println!("Failed: {:?}. Try again.", err);
+            // continue;
+            // }
+            _ => (),
         }
     }
 }
