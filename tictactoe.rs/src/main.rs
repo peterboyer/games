@@ -140,3 +140,38 @@ fn main() {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::*;
+
+    #[test]
+    fn it_should_put_x_in_1_1() {
+        let mut game = Game::new_with(GameOptions {
+            initial_player: Some(Player::X),
+            ..Default::default()
+        });
+        game.next(Coord { x: 1, y: 1 }).unwrap();
+        assert!(game.grid.get(&Coord { x: 1, y: 1 }).unwrap() == &Player::X);
+    }
+
+    #[test]
+    fn it_should_change_player_after_valid_turn() {
+        let mut game = Game::new_with(GameOptions {
+            initial_player: Some(Player::X),
+            ..Default::default()
+        });
+        game.next(Coord { x: 1, y: 1 }).unwrap();
+        assert!(game.player == Player::O);
+    }
+
+    #[test]
+    fn it_should_not_change_player_if_invalid_turn() {
+        let mut game = Game::new_with(GameOptions {
+            initial_player: Some(Player::X),
+            ..Default::default()
+        });
+        game.next(Coord { x: 1, y: 1 }).unwrap();
+        assert!(game.next(Coord { x: 1, y: 1 }).is_err());
+    }
+}
