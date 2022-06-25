@@ -87,10 +87,6 @@ impl Game {
             return Result::Err(GameError::GameOver);
         }
 
-        println!("...");
-        println!("{:?}", self.grid);
-        // let (player, grid) = (self.player, &mut self.grid);
-
         match self.grid.get(&coord) {
             Some(_) => {
                 return Result::Err(GameError::CoordOccupied);
@@ -113,6 +109,54 @@ impl Game {
                 if x == 3 {
                     self.winner = row_player;
                 }
+            }
+        }
+        // solve cols
+        for x in 1..=3 {
+            let col_player = self.grid.get(&Coord { y: 1, x }).map(|&p| *&p);
+            if col_player.is_none() {
+                continue;
+            }
+            for y in 2..=3 {
+                let cmp_player = self.grid.get(&Coord { x, y }).map(|&p| *&p);
+                if cmp_player != col_player {
+                    break
+                }
+                if y == 3 {
+                    self.winner = col_player;
+                }
+            }
+        }
+        // solve diagonals
+        // ((1,1), (2,2), (3,3))
+        // ((3,1), (2,2), (1,3))
+        let mut player: Option<Player> = None;
+        for i in 1..=3 {
+            let tmp_player = self.grid.get(&Coord { x: i, y: i }).map(|&p| *&p);
+            if tmp_player.is_none() {
+                break;
+            }
+            if i != 1 && player != tmp_player {
+                break;
+            }
+            player = tmp_player;
+            if i == 3 {
+                self.winner = player;
+            }
+        }
+
+        let mut player: Option<Player> = None;
+        for i in 1..=3 {
+            let tmp_player = self.grid.get(&Coord { x: 4 - i, y: i }).map(|&p| *&p);
+            if tmp_player.is_none() {
+                break;
+            }
+            if i != 1 && player != tmp_player {
+                break;
+            }
+            player = tmp_player;
+            if i == 3 {
+                self.winner = player;
             }
         }
 
@@ -220,5 +264,47 @@ mod tests {
         game.next(Coord { x: 3, y: 1 }).unwrap();
         assert!(game.winner.unwrap() == Player::X);
         assert!(matches!(game.next(Coord { x: 1, y: 1 }), Result::Err(GameError::GameOver)));
+    }
+
+    #[test]
+    fn it_should_win_game_if_3_in_col() {
+        let mut game = Game::new_with(GameOptions {
+            initial_player: Some(Player::X),
+            ..Default::default()
+        });
+        game.next(Coord { x: 2, y: 1 }).unwrap();
+        game.next(Coord { x: 1, y: 1 }).unwrap();
+        game.next(Coord { x: 2, y: 2 }).unwrap();
+        game.next(Coord { x: 1, y: 2 }).unwrap();
+        game.next(Coord { x: 2, y: 3 }).unwrap();
+        assert!(game.winner.unwrap() == Player::X);
+    }
+
+    #[test]
+    fn it_should_win_game_if_3_in_diag_1() {
+        let mut game = Game::new_with(GameOptions {
+            initial_player: Some(Player::X),
+            ..Default::default()
+        });
+        game.next(Coord { x: 1, y: 1 }).unwrap();
+        game.next(Coord { x: 2, y: 1 }).unwrap();
+        game.next(Coord { x: 2, y: 2 }).unwrap();
+        game.next(Coord { x: 1, y: 2 }).unwrap();
+        game.next(Coord { x: 3, y: 3 }).unwrap();
+        assert!(game.winner.unwrap() == Player::X);
+    }
+
+    #[test]
+    fn it_should_win_game_if_3_in_diag_2() {
+        let mut game = Game::new_with(GameOptions {
+            initial_player: Some(Player::X),
+            ..Default::default()
+        });
+        game.next(Coord { x: 3, y: 1 }).unwrap();
+        game.next(Coord { x: 2, y: 1 }).unwrap();
+        game.next(Coord { x: 2, y: 2 }).unwrap();
+        game.next(Coord { x: 1, y: 2 }).unwrap();
+        game.next(Coord { x: 1, y: 3 }).unwrap();
+        assert!(game.winner.unwrap() == Player::X);
     }
 }
