@@ -18,6 +18,7 @@ struct Coord {
 struct Game {
     player: Player,
     grid: HashMap<Coord, Player>,
+    winner: Option<Player>,
 }
 
 struct GameOptions {
@@ -35,6 +36,7 @@ impl Default for GameOptions {
 #[derive(Debug)]
 enum GameError {
     CoordOccupied,
+    GameOver,
 }
 
 impl Game {
@@ -51,6 +53,7 @@ impl Game {
                     false => Player::O,
                 }),
             grid: HashMap::new(),
+            winner: None,
         }
     }
 
@@ -79,18 +82,41 @@ impl Game {
     }
 
     fn next(&mut self, coord: Coord) -> Result<(), GameError> {
-        let (player, grid) = (self.player, &mut self.grid);
+        let winner = self.winner;
+        if winner.is_some() {
+            return Result::Err(GameError::GameOver);
+        }
 
-        match grid.get(&coord) {
+        println!("...");
+        println!("{:?}", self.grid);
+        // let (player, grid) = (self.player, &mut self.grid);
+
+        match self.grid.get(&coord) {
             Some(_) => {
                 return Result::Err(GameError::CoordOccupied);
             }
             _ => (),
         }
 
-        grid.insert(coord, player);
+        self.grid.insert(coord, self.player);
+        // solve rows
+        for y in 1..=3 {
+            let row_player = self.grid.get(&Coord { x: 1, y }).map(|&p| *&p);
+            if row_player.is_none() {
+                continue;
+            }
+            for x in 2..=3 {
+                let cmp_player = self.grid.get(&Coord { x, y }).map(|&p| *&p);
+                if cmp_player != row_player {
+                    break
+                }
+                if x == 3 {
+                    self.winner = row_player;
+                }
+            }
+        }
 
-        if player == Player::X {
+        if self.player == Player::X {
             self.player = Player::O;
         } else {
             self.player = Player::X;
@@ -132,10 +158,10 @@ fn main() {
                 println!("Coordinate already occupied! Try again.");
                 continue;
             }
-            // Err(err) => {
-            // println!("Failed: {:?}. Try again.", err);
-            // continue;
-            // }
+            Err(GameError::GameOver) => {
+                println!("Game is already finished!");
+                continue;
+            }
             _ => (),
         }
     }
@@ -146,13 +172,19 @@ mod tests {
     use crate::*;
 
     #[test]
-    fn it_should_put_x_in_1_1() {
+    fn it_should_correctly_assign_player_to_cells() {
         let mut game = Game::new_with(GameOptions {
             initial_player: Some(Player::X),
             ..Default::default()
         });
         game.next(Coord { x: 1, y: 1 }).unwrap();
+        game.next(Coord { x: 1, y: 2 }).unwrap();
+        game.next(Coord { x: 2, y: 1 }).unwrap();
+        game.next(Coord { x: 2, y: 2 }).unwrap();
         assert!(game.grid.get(&Coord { x: 1, y: 1 }).unwrap() == &Player::X);
+        assert!(game.grid.get(&Coord { x: 1, y: 2 }).unwrap() == &Player::O);
+        assert!(game.grid.get(&Coord { x: 2, y: 1 }).unwrap() == &Player::X);
+        assert!(game.grid.get(&Coord { x: 2, y: 2 }).unwrap() == &Player::O);
     }
 
     #[test]
@@ -173,5 +205,20 @@ mod tests {
         });
         game.next(Coord { x: 1, y: 1 }).unwrap();
         assert!(game.next(Coord { x: 1, y: 1 }).is_err());
+    }
+
+    #[test]
+    fn it_should_win_game_if_3_in_row_and_error_after() {
+        let mut game = Game::new_with(GameOptions {
+            initial_player: Some(Player::X),
+            ..Default::default()
+        });
+        game.next(Coord { x: 1, y: 1 }).unwrap();
+        game.next(Coord { x: 1, y: 2 }).unwrap();
+        game.next(Coord { x: 2, y: 1 }).unwrap();
+        game.next(Coord { x: 2, y: 2 }).unwrap();
+        game.next(Coord { x: 3, y: 1 }).unwrap();
+        assert!(game.winner.unwrap() == Player::X);
+        assert!(matches!(game.next(Coord { x: 1, y: 1 }), Result::Err(GameError::GameOver)));
     }
 }
