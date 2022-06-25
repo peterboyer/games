@@ -175,6 +175,10 @@ fn main() {
 
     loop {
         game.draw();
+        if game.winner.is_some() {
+            println!("Game Over! {:?} Wins!", game.winner.unwrap());
+            break;
+        }
         println!("Current Player: {:?}", game.player);
 
         let mut input = String::new();
